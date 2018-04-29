@@ -10,7 +10,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 
-import main.java.memoranda.EventsScheduler;
+//TASK 3-2 SMELL BETWEEN CLASSES 
+//Class envy (EventsScheduler envious of Events Manager)
+//Moved all code located in EventsScheduler to EventsManager
+//and deleted class EventsScheduler. Changed all references
+//to support this. All references to EventsManager will be 
+//commented in the code as 3-2 SMELL FIX.
+import main.java.memoranda.EventsManager;
+
 import main.java.memoranda.util.Configuration;
 
 /**
@@ -89,8 +96,8 @@ public class App {
 			/* DEBUG */
 			System.out.println("[DEBUG] first day of week is set to " + fdow);
 		}
-
-		EventsScheduler.init();
+		//3-2 SMELL FIX
+		EventsManager.init();
 		frame = new AppFrame();
 		if (fullmode) {
 			init();

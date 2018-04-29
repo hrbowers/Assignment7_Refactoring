@@ -24,22 +24,29 @@ import javax.swing.border.Border;
 
 import main.java.memoranda.CurrentNote;
 import main.java.memoranda.CurrentProject;
-import main.java.memoranda.EventNotificationListener;
-import main.java.memoranda.EventsScheduler;
+
+//TASK 3-2 SMELL BETWEEN CLASSES 
+//Class envy (EventsScheduler envious of Events Manager)
+//Moved all code located in EventsScheduler to EventsManager
+//and deleted class EventsScheduler. Changed all references
+//to support this. All references to EventsManager will be 
+//commented in the code as 3-2 SMELL FIX.
+import main.java.memoranda.EventsManager;
 import main.java.memoranda.History;
 import main.java.memoranda.HistoryItem;
-import main.java.memoranda.HistoryListener;
-import main.java.memoranda.Note;
-import main.java.memoranda.NoteList;
-import main.java.memoranda.NoteListener;
-import main.java.memoranda.Project;
-import main.java.memoranda.ProjectListener;
-import main.java.memoranda.ResourcesList;
-import main.java.memoranda.Task;
-import main.java.memoranda.TaskList;
 import main.java.memoranda.date.CalendarDate;
 import main.java.memoranda.date.CurrentDate;
 import main.java.memoranda.date.DateListener;
+import main.java.memoranda.interfaces.IEventNotificationListener;
+import main.java.memoranda.interfaces.IHistoryListener;
+import main.java.memoranda.interfaces.INote;
+import main.java.memoranda.interfaces.INoteList;
+import main.java.memoranda.interfaces.INoteListener;
+import main.java.memoranda.interfaces.IProject;
+import main.java.memoranda.interfaces.IProjectListener;
+import main.java.memoranda.interfaces.IResourcesList;
+import main.java.memoranda.interfaces.ITask;
+import main.java.memoranda.interfaces.ITaskList;
 import main.java.memoranda.util.CurrentStorage;
 import main.java.memoranda.util.Local;
 import main.java.memoranda.util.Util;
@@ -70,7 +77,7 @@ public class DailyItemsPanel extends JPanel {
     ImageIcon bookmarkIcon = new ImageIcon(main.java.memoranda.ui.AppFrame.class.getResource("/ui/icons/star8.png"));
     boolean expanded = true;
 
-    Note currentNote;
+    INote currentNote;
 	CalendarDate currentDate;
 
     boolean calendarIgnoreChange = false;
@@ -221,8 +228,8 @@ public class DailyItemsPanel extends JPanel {
             }
         });
 
-        CurrentProject.addProjectListener(new ProjectListener() {
-            public void projectChange(Project p, NoteList nl, TaskList tl, ResourcesList rl) {
+        CurrentProject.addProjectListener(new IProjectListener() {
+            public void projectChange(IProject p, INoteList nl, ITaskList tl, IResourcesList rl) {
 //            	Util.debug("DailyItemsPanel Project Listener: Project is going to be changed!");				
 //            	Util.debug("current project is " + CurrentProject.get().getTitle());
 
@@ -248,8 +255,8 @@ public class DailyItemsPanel extends JPanel {
             }
         });
 
-        CurrentNote.addNoteListener(new NoteListener() {
-            public void noteChange(Note note, boolean toSaveCurrentNote) {
+        CurrentNote.addNoteListener(new INoteListener() {
+            public void noteChange(INote note, boolean toSaveCurrentNote) {
                 currentNoteChanged(note, toSaveCurrentNote);
             }
         });
@@ -273,14 +280,15 @@ public class DailyItemsPanel extends JPanel {
             }
         });
 
-        History.addHistoryListener(new HistoryListener() {
+        History.addHistoryListener(new IHistoryListener() {
             public void historyWasRolledTo(HistoryItem hi) {
                 historyChanged(hi);
             }
         });
 
-        EventsScheduler.addListener(new EventNotificationListener() {
-            public void eventIsOccured(main.java.memoranda.Event ev) {
+        //3-2 SMELL FIX
+        EventsManager.addListener(new IEventNotificationListener() {
+            public void eventIsOccured(main.java.memoranda.interfaces.IEvent ev) {
                 /*DEBUG*/
                 System.out.println(ev.getTimeString() + " " + ev.getText());
                 updateIndicators();
@@ -347,7 +355,7 @@ public class DailyItemsPanel extends JPanel {
         App.getFrame().setCursor(cur);
     }
 
-	void currentNoteChanged(Note note, boolean toSaveCurrentNote) {
+	void currentNoteChanged(INote note, boolean toSaveCurrentNote) {
 //		Util.debug("currentNoteChanged");
 		
 		if (editorPanel.isDocumentChanged()) {
@@ -362,7 +370,7 @@ public class DailyItemsPanel extends JPanel {
 		editorPanel.editor.requestFocus();		
 	}
 	
-    void currentProjectChanged(Project newprj, NoteList nl, TaskList tl, ResourcesList rl) {
+    void currentProjectChanged(IProject newprj, INoteList nl, ITaskList tl, IResourcesList rl) {
 //		Util.debug("currentProjectChanged");
 
         Cursor cur = App.getFrame().getCursor();
@@ -421,18 +429,18 @@ public class DailyItemsPanel extends JPanel {
         }
     }
 
-    public void updateIndicators(CalendarDate date, TaskList tl) {
+    public void updateIndicators(CalendarDate date, ITaskList tl) {
         indicatorsPanel.removeAll();
         if (date.equals(CalendarDate.today())) {
             if (tl.getActiveSubTasks(null,date).size() > 0)
                 indicatorsPanel.add(taskB, null);
-            if (EventsScheduler.isEventScheduled()) {
+            if (EventsManager.isEventScheduled()) {
                 /*String evlist = "";
                 for (Iterator it = EventsScheduler.getScheduledEvents().iterator(); it.hasNext();) {
                     net.sf.memoranda.Event ev = (net.sf.memoranda.Event)it.next();   
                     evlist += ev.getTimeString()+" - "+ev.getText()+"\n";
                 } */
-                main.java.memoranda.Event ev = EventsScheduler.getFirstScheduledEvent();
+                main.java.memoranda.interfaces.IEvent ev = EventsManager.getFirstScheduledEvent();
                 alarmB.setToolTipText(ev.getTimeString() + " - " + ev.getText());
                 indicatorsPanel.add(alarmB, null);
             }
@@ -450,7 +458,7 @@ public class DailyItemsPanel extends JPanel {
          //   calendar.jnCalendar.updateUI();
         }
         if (pan.equals("TASKS") && (tasksPanel.taskTable.getSelectedRow() > -1)) {
-            Task t =
+            ITask t =
                 CurrentProject.getTaskList().getTask(
                     tasksPanel
                         .taskTable

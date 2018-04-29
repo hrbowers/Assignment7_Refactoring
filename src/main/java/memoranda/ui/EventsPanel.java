@@ -24,8 +24,13 @@ import javax.swing.JToolBar;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+//TASK 3-2 SMELL BETWEEN CLASSES 
+//Class envy (EventsScheduler envious of Events Manager)
+//Moved all code located in EventsScheduler to EventsManager
+//and deleted class EventsScheduler. Changed all references
+//to support this. All references to EventsManager will be 
+//commented in the code as 3-2 SMELL FIX.
 import main.java.memoranda.EventsManager;
-import main.java.memoranda.EventsScheduler;
 import main.java.memoranda.History;
 import main.java.memoranda.date.CalendarDate;
 import main.java.memoranda.date.CurrentDate;
@@ -225,8 +230,8 @@ public class EventsPanel extends JPanel {
 
     void editEventB_actionPerformed(ActionEvent e) {
         EventDialog dlg = new EventDialog(App.getFrame(), Local.getString("Event"));
-        main.java.memoranda.Event ev =
-            (main.java.memoranda.Event) eventsTable.getModel().getValueAt(
+        main.java.memoranda.interfaces.IEvent ev =
+            (main.java.memoranda.interfaces.IEvent) eventsTable.getModel().getValueAt(
                 eventsTable.getSelectedRow(),
                 EventsTable.EVENT);
         
@@ -240,6 +245,7 @@ public class EventsPanel extends JPanel {
         int rep = ev.getRepeat();
         if (rep > 0) {
             dlg.startDate.getModel().setValue(ev.getStartDate().getDate());
+            //3-2 SMELL FIX
             if (rep == EventsManager.REPEAT_DAILY) {
                 dlg.dailyRepeatRB.setSelected(true);
                 dlg.dailyRepeatRB_actionPerformed(null);
@@ -255,6 +261,8 @@ public class EventsPanel extends JPanel {
 		}
                 dlg.weekdaysCB.setSelectedIndex(d);
             }
+            //3-2 SMELL BETWEEN CLASSES
+            
             else if (rep == EventsManager.REPEAT_MONTHLY) {
                 dlg.monthlyRepeatRB.setSelected(true);
                 dlg.monthlyRepeatRB_actionPerformed(null);
@@ -355,7 +363,7 @@ public class EventsPanel extends JPanel {
     private void saveEvents() {
 	CurrentStorage.get().storeEventsManager();
         eventsTable.refresh();
-        EventsScheduler.init();
+        EventsManager.init();
         parentPanel.calendar.jnCalendar.updateUI();
         parentPanel.updateIndicators();
     }
@@ -393,13 +401,13 @@ public class EventsPanel extends JPanel {
 
     void removeEventB_actionPerformed(ActionEvent e) {
 		String msg;
-		main.java.memoranda.Event ev;
+		main.java.memoranda.interfaces.IEvent ev;
 
 		if(eventsTable.getSelectedRows().length > 1) 
 			msg = Local.getString("Remove") + " " + eventsTable.getSelectedRows().length 
 				+ " " + Local.getString("events") + "\n" + Local.getString("Are you sure?");
 		else {
-			ev = (main.java.memoranda.Event) eventsTable.getModel().getValueAt(
+			ev = (main.java.memoranda.interfaces.IEvent) eventsTable.getModel().getValueAt(
                 eventsTable.getSelectedRow(),
                 EventsTable.EVENT);
 			msg = Local.getString("Remove event") + "\n'" 
@@ -415,7 +423,7 @@ public class EventsPanel extends JPanel {
         if (n != JOptionPane.YES_OPTION) return;
 
         for(int i=0; i< eventsTable.getSelectedRows().length;i++) {
-			ev = (main.java.memoranda.Event) eventsTable.getModel().getValueAt(
+			ev = (main.java.memoranda.interfaces.IEvent) eventsTable.getModel().getValueAt(
                   eventsTable.getSelectedRows()[i], EventsTable.EVENT);
         EventsManager.removeEvent(ev);
 		}
